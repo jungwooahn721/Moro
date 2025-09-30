@@ -1,6 +1,6 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from .parsing_with_date import filter_out_by_criteria
+from .parsing_with_criteria import parse_with_criteria
 from pathlib import Path
 import numpy as np
 import json
@@ -11,6 +11,7 @@ embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
 def _concat_event_fields(event):
+    """ Database에 있는 데이터 이벤트 중 title, description, location, member 필드를 조합하여 하나의 문자열로 만들기."""
     parts = []
     for key in ("title", "description", "location", "member"):
         if key not in event or event[key] is None:
@@ -24,7 +25,9 @@ def _concat_event_fields(event):
 
 
 def embed_events(events, vector_dir="RAG/VectorDB/user"):
-    """Embed events and save with embeddings to JSON files"""
+    """이벤트 별로 문자열을 조합하여 임베딩하고 JSON 파일로 저장하기
+    이렇게 하면 하나의 이벤트를 하나의 context로 처리할 수 있음"""
+
     # Create directory if it doesn't exist
     vector_dir = Path(vector_dir)
     vector_dir.mkdir(parents=True, exist_ok=True)
@@ -34,7 +37,7 @@ def embed_events(events, vector_dir="RAG/VectorDB/user"):
         file.unlink()
     
     # Process each event
-    for i, event in enumerate(events):
+    for event in enumerate(events):
         text = _concat_event_fields(event)
         # Generate embedding for this text
         embedding = embedding_model.embed_query(text)
@@ -45,7 +48,7 @@ def embed_events(events, vector_dir="RAG/VectorDB/user"):
             "embedding": embedding
         }
         
-        event_file = vector_dir / f"event_{i:04d}.json"
+        event_file = vector_dir / f"event_id:{event['id']}.json"
         with open(event_file, 'w', encoding='utf-8') as f:
             json.dump(event_data, f, ensure_ascii=False, indent=2)
     
@@ -82,10 +85,11 @@ def parse_with_content(query: str, criteria=None, k: int = 10, vector_dir="RAG/V
     if not all_event_data:
         return []
     
-    # Filter events by criteria
+    # Filter events by criteria (use parse_with_criteria which returns matching events)
     all_events = [data["event"] for data in all_event_data]
-    excluded = set(map(id, filter_out_by_criteria(all_events, **(criteria or {}))))
-    matching_event_data = [data for i, data in enumerate(all_event_data) if id(all_events[i]) not in excluded]
+    matched_events = parse_with_criteria(all_events, criteria or {})
+    matched_ids = set(map(id, matched_events))
+    matching_event_data = [data for i, data in enumerate(all_event_data) if id(all_events[i]) in matched_ids]
 
     
     if not matching_event_data:

@@ -146,13 +146,16 @@ def filter_out_by_criteria(
     return result
 
 
-def parse_with_date(
+def parse_with_criteria(
     events: Iterable[Dict[str, Any]],
     criteria: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:
-    """Public API: provide concatenated event list and criteria; get items that do NOT match.
+    """Public API: return events that match given criteria.
     """
-    # Merge criteria dict with any direct keyword args (e.g., sort_by="start")
     merged = {**(criteria or {}), **kwargs}
-    return filter_out_by_criteria(events, **merged)
+    events_list = list(events)
+    excluded = filter_out_by_criteria(events_list, **merged)
+    excluded_ids = set(map(id, excluded))
+    included = [ev for ev in events_list if id(ev) not in excluded_ids]
+    return included
