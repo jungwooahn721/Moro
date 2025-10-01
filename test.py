@@ -66,15 +66,15 @@ def test_basic_filtering():
     print(f"전체 이벤트 수: {len(events)}")
     
     # 특정 날짜 필터링 (2025-09-30 포함)
-    filtered = parse_with_criteria(events, {"date": "2025-09-30"})
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={"date": "2025-09-30"})
     print(f"2025-09-30 이벤트 수: {len(filtered)}")
     
     # 금요일 필터링 (금요일 포함)
-    filtered = parse_with_criteria(events, {"weekday": 4})  # 4 = 금요일
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={"weekday": 4})  # 4 = 금요일
     print(f"금요일 이벤트 수: {len(filtered)}")
     
     # 특정 시간 필터링 (21:00 포함)
-    filtered = parse_with_criteria(events, {"hour": "21:00"})
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={"hour": "21:00"})
     print(f"21:00 이벤트 수: {len(filtered)}")
 
 def test_advanced_filtering():
@@ -87,7 +87,7 @@ def test_advanced_filtering():
         return
     
     # 복합 조건: 2025년 10월의 금요일 21시 이벤트 포함
-    filtered = parse_with_criteria(events, {
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={
         "date": "2025-10-31",  # 10월 31일
         "weekday": 4,          # 금요일
         "hour": "21:00"        # 21시
@@ -105,14 +105,14 @@ def test_time_window_filtering():
     
     # 특정 기준 시간에서 ±12시간 범위의 이벤트 포함
     reference_time = datetime(2025, 10, 15, 12, 0, tzinfo=KST)
-    filtered = parse_with_criteria(events, {
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={
         "time_window_hours": 12,
         "reference_time": reference_time
     })
     print(f"기준 시간({reference_time})에서 ±12시간 범위 이벤트 수: {len(filtered)}")
     
     # 가장 가까운 5개 포함
-    filtered = parse_with_criteria(events, {
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={
         "nearest_n": 5,
         "reference_time": reference_time,
         "sort_by": "nearest"
@@ -136,7 +136,7 @@ def test_sorting():
         return
     
     # 시작 시간순 정렬
-    filtered = parse_with_criteria(events, {"date": "2025-09-01"}, sort_by="start")
+    filtered = parse_with_criteria(vector_dir="Database/[user]", criteria={"date": "2025-09-01"}, sort_by="start")
     print("2025-09-01이 아닌 이벤트들 (시작 시간순):")
     for i, event in enumerate(filtered[:3]):
         print(f"  {i+1}. {event['title']} - {event['date_start']}")

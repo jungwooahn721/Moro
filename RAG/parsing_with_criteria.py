@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from pathlib import Path
+import json
 
 
 KST = timezone(timedelta(hours=9))
@@ -147,14 +149,34 @@ def filter_out_by_criteria(
 
 
 def parse_with_criteria(
-    events: Iterable[Dict[str, Any]],
+    vector_dir: str = "Database/[user]",
     criteria: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:
     """Public API: return events that match given criteria.
     """
+    vector_dir = Path(vector_dir)
+    if not vector_dir.exists():
+        return []
+    
+    # Find all JSON files (monthly files, not event_*.json)
+    json_files = list(vector_dir.glob("*.json"))
+    if not json_files:
+        return []
+    # Load all events from monthly JSON files
+    events_list = []
+    for json_file in sorted(json_files):
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                file_events = json.load(f)
+                events_list.extend(file_events)
+        except Exception as e:
+            print(f"Failed to load {json_file}: {e}")
+            continue
+    
+    if not events_list:
+        return []
     merged = {**(criteria or {}), **kwargs}
-    events_list = list(events)
     excluded = filter_out_by_criteria(events_list, **merged)
     excluded_ids = set(map(id, excluded))
     included = [ev for ev in events_list if id(ev) not in excluded_ids]

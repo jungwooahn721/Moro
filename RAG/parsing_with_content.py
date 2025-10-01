@@ -86,34 +86,12 @@ def parse_with_content(query: str, criteria=None, k: int = 10, vector_dir="Datab
     if not query:
         return []
     
-    vector_dir = Path(vector_dir)
-    if not vector_dir.exists():
-        return []
-    
-    # Find all JSON files (monthly files, not event_*.json)
-    json_files = list(vector_dir.glob("*.json"))
-    if not json_files:
-        return []
-    
-    # Load all events from monthly JSON files
-    all_events = []
-    for json_file in sorted(json_files):
-        try:
-            with open(json_file, 'r', encoding='utf-8') as f:
-                file_events = json.load(f)
-                all_events.extend(file_events)
-        except Exception as e:
-            print(f"Failed to load {json_file}: {e}")
-            continue
-    
-    if not all_events:
-        return []
     
     # Filter events by criteria (use parse_with_criteria which returns matching events)
-    matched_events = parse_with_criteria(all_events, criteria or {})
+    matched_events = parse_with_criteria(vector_dir, criteria=criteria or {})
     matched_ids = set(event['id'] for event in matched_events)
     # Filter events that match criteria
-    matching_events = [event for event in all_events if event['id'] in matched_ids]
+    matching_events = [event for event in matched_events if event['id'] in matched_ids]
     
     if not matching_events:
         return []

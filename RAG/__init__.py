@@ -9,11 +9,15 @@ class RAG:
 
     def _embed_events(self, events):
         return embed_events(events, vector_dir="Database/[user]")
+
     def embed_event(self, event: dict) -> dict:
-        return embed_event(event, vector_dir="Database/[user]")
+        """Input: 이벤트, Output: 이벤트 + embedding 필드"""
+        return embed_event(event)
+
     def parse_with_criteria(self, events=None, criteria=None):
         if events is None:
             events = self.events
-        return parse_with_criteria(events, criteria)
+        return parse_with_criteria(vector_dir="Database/[user]", criteria=criteria)
+        
     def parse_with_content(self, query=None, criteria=None, k=10, vector_dir="Database/[user]"):
         return parse_with_content(query, criteria, k, vector_dir="Database/[user]")
