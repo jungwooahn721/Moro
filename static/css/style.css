@@ -1,0 +1,504 @@
+/* 다크 테마 기반 디자인 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a1a;
+    color: #ffffff;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* 왼쪽 캘린더 섹션 */
+.calendar-section {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 20px;
+    border-right: 1px solid #333;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.month-year {
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.calendar-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: #333;
+    border: none;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-icon:hover {
+    background: #444;
+}
+
+/* 캘린더 그리드 */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calendar-day-header {
+    background: #2a2a2a;
+    color: #ffffff;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.calendar-day {
+    background: #1a1a1a;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #333;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.calendar-day:hover {
+    background: #2a2a2a;
+}
+
+.calendar-day.other-month {
+    color: #666;
+    background: #0f0f0f;
+}
+
+.calendar-day.sunday {
+    color: #ff6b6b;
+}
+
+.calendar-day.today {
+    background: #4a90e2;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+.calendar-day.has-events {
+    background: #2a2a2a;
+}
+
+.day-number {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.event-block {
+    background: #4a90e2;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.event-block:hover {
+    background: #357abd;
+}
+
+/* 오른쪽 Today 섹션 */
+.today-section {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.today-btn {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.today-btn:hover {
+    background: #357abd;
+}
+
+.settings-btn {
+    background: #333;
+    border: none;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.settings-btn:hover {
+    background: #444;
+}
+
+.today-info {
+    margin-bottom: 20px;
+}
+
+.today-date {
+    font-size: 16px;
+    color: #cccccc;
+    margin-bottom: 10px;
+}
+
+#todayEvents {
+    min-height: 60px;
+}
+
+.event-item {
+    background: #2a2a2a;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid #4a90e2;
+}
+
+.event-time {
+    font-size: 12px;
+    color: #4a90e2;
+    font-weight: 500;
+}
+
+.event-title {
+    font-size: 14px;
+    color: #ffffff;
+    margin-top: 2px;
+}
+
+/* 챗봇 메시지 */
+.chatbot-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding-right: 10px;
+}
+
+.message {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.bot-message .message-content {
+    background: #2a2a2a;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.4;
+    max-width: 80%;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.user-message .message-content {
+    background: #4a90e2;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    max-width: 80%;
+}
+
+/* 입력 영역 */
+.chatbot-input {
+    margin-top: auto;
+}
+
+/* quick-actions 스타일 제거됨 - 자연어 입력으로 통합 */
+
+.input-container {
+    display: flex;
+    align-items: center;
+    background: #2a2a2a;
+    border-radius: 12px;
+    padding: 8px 12px;
+    gap: 8px;
+}
+
+#chatInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    padding: 8px 0;
+}
+
+#chatInput::placeholder {
+    color: #666;
+}
+
+.btn-camera, .btn-send {
+    background: #4a90e2;
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-camera:hover, .btn-send:hover {
+    background: #357abd;
+}
+
+/* 모달 스타일 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background: #2a2a2a;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    color: #ffffff;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #cccccc;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #333;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-secondary {
+    background: #444;
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background: #555;
+}
+
+.btn-primary {
+    background: #4a90e2;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #357abd;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .calendar-section,
+    .today-section {
+        flex: none;
+        height: 50vh;
+    }
+    
+    .calendar-day {
+        min-height: 60px;
+    }
+}
+
+/* 로딩 애니메이션 */
+.loading-text {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.loading-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: #4a90e2;
+    border-radius: 50%;
+    animation: loading-bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes loading-bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

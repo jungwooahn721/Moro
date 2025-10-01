@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+openai
+google-api-python-client
+langchain
+langchain-openai
+chromadb
+python-dotenv
+jinja2
+python-multipart
+pytz
