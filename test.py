@@ -24,7 +24,7 @@ def load_test_data():
         # 직접 폴더 내용 확인
         if os.path.exists(data_dir):
             all_files = os.listdir(data_dir)
-            json_files = [os.path.join(data_dir, f) for f in all_files if f.endswith('.json')]
+            json_files = [os.path.join(data_dir, f) for f in all_files if f.endswith('.json') and not f.startswith('event_')]
         else:
             json_files = []
     except Exception as e:
