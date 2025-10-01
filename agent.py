@@ -1,5 +1,6 @@
 from RAG.parsing_with_criteria import parse_with_criteria
 from RAG.parsing_with_content import parse_with_content
+from eventmanager import delete_event_in_user, update_event_in_user, add_event_in_user
 from openai import OpenAI
 import os
 import json
@@ -29,6 +30,7 @@ class Agent:
 
                 if fn_name == "parse_with_criteria":
                     result = parse_with_criteria(**args)
+                    result = {k: v for k, v in result.items() if k != "embedding"}
                 elif fn_name == "parse_with_content":
                     result = parse_with_content(**args)
                 elif fn_name == "delete_event_in_user":
