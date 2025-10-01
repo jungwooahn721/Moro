@@ -5,6 +5,7 @@ from openai import OpenAI
 import os
 import json
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -16,7 +17,10 @@ class Agent:
     def __call__(self, query: str):
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": query}],
+            messages=[
+                {"role": "user", "content": query},
+                {"role": "system", "content": f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"}
+            ],
             tools=self.tools,
             tool_choice="auto",
         )
@@ -30,9 +34,12 @@ class Agent:
 
                 if fn_name == "parse_with_criteria":
                     result = parse_with_criteria(**args)
-                    result = {k: v for k, v in result.items() if k != "embedding"}
+                    if result:
+                        result = "".join([f"{k}: {v}\n" for k, v in result[0].items() if k != "embedding"])
                 elif fn_name == "parse_with_content":
                     result = parse_with_content(**args)
+                    if result:
+                        result = "".join([f"{k}: {v}\n" for k, v in result[0].items() if k != "embedding"])
                 elif fn_name == "delete_event_in_user":
                     result = delete_event_in_user(**args)
                 elif fn_name == "update_event_in_user":
@@ -49,7 +56,7 @@ class Agent:
                 })
 
             follow_up = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 messages=[
                     {"role": "user", "content": "query"},
                     msg,
@@ -60,6 +67,5 @@ class Agent:
         else:
             return(msg.content)
 
-agent = Agent()
-print(agent("수요일 일정 알려줘."))
-print(agent("1번 일정 제거해해줘."))
+#agent = Agent()
+#print(agent("set math midterm tomorrow."))
