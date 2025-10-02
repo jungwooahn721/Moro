@@ -20,6 +20,7 @@ class ReactAgent:
         self.llm = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.1,
+            max_tokens=4000,
             api_key=os.getenv("OPENAI_API_KEY")
         )
         
@@ -51,17 +52,54 @@ Observation: the result of the action
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
+CRITICAL RULES:
+- NEVER repeat the same Action more than once
+- After getting results from a tool, you MUST provide a Final Answer
+- Do NOT continue with more Actions after receiving successful results
+- If you have the information you need, provide Final Answer immediately
+- For search tasks: Search once, then provide Final Answer with the results
+- For complex tasks: Complete the task, then provide Final Answer
+
+GUARDRAILS:
+- parse_with_criteria is ONLY for searching existing events, NOT for checking what day of the week a date is
+- If user asks "금요일이 며칠이야?" or "10월 3일이 무슨 요일이야?" → Use Final Answer directly, do NOT use tools
+- For date/day questions: Calculate and provide the answer directly without using any tools
+
 RULES:
 - For greetings or non-calendar questions: skip Action and go directly to Final Answer
-- For calendar tasks: use appropriate tools from the list
+- For simple calendar tasks (search, view): use one tool then provide Final Answer
+- For complex calendar tasks (search + modify/delete): use multiple tools in sequence, then provide Final Answer
 - When no tool is needed: skip Action and go directly to Final Answer
 - Always respond in Korean
 - If you cannot find the information after 3 attempts, provide a helpful response and stop
 - Do not repeat the same action multiple times
+- Explain your reasoning in each Thought step
+- For delete/modify tasks: always search first to get the correct ID, then perform the action
 
 Examples:
+
+SIMPLE TASKS (single tool):
 - Greeting: "안녕하세요" → Thought: This is a greeting → Final Answer: 안녕하세요! 일정 관리에 도움이 필요하시면 말씀해 주세요.
-- Calendar task: "오늘 일정 보여줘" → Thought: Need to search today's events → Action: parse_with_criteria → Action Input: {{"date": "2024-10-02"}}
+- Search: "오늘 일정 보여줘" → Thought: Need to search today's events → Action: parse_with_criteria → Action Input: date filter → Observation: [results] → Thought: I have the results → Final Answer: 오늘의 일정은...
+- Year search: "2025년 일정 보여줘" → Thought: Need to search 2025 events → Action: parse_with_criteria → Action Input: year filter → Observation: [results] → Thought: I have the results → Final Answer: 2025년 일정은...
+- Month search: "10월 일정 보여줘" → Thought: Need to search October events → Action: parse_with_criteria → Action Input: month filter → Observation: [results] → Thought: I have the results → Final Answer: 10월 일정은...
+- Weekday search: "금요일 일정 보여줘" → Thought: Need to search Friday events → Action: parse_with_criteria → Action Input: weekday filter → Observation: [results] → Thought: I have the results → Final Answer: 금요일 일정은...
+- Content search: "회의 일정 보여줘" → Thought: Need to search for meeting events → Action: parse_with_content → Action Input: query text → Observation: [results] → Thought: I have the results → Final Answer: 회의 일정은...
+only day search: parse_with_criteria
+day search + content search: parse_with_content
+
+GUARDRAIL EXAMPLES (NO TOOLS):
+- Date question: "금요일이 며칠이야?" → Thought: This is asking about what date Friday is, not searching events → Final Answer: 금요일은 [날짜]입니다.
+- Day question: "10월 3일이 무슨 요일이야?" → Thought: This is asking what day of the week October 3rd is, not searching events → Final Answer: 10월 3일은 [요일]입니다.
+
+STOP CONDITIONS:
+- If you get results from parse_with_criteria: STOP and provide Final Answer
+- If you get results from parse_with_content: STOP and provide Final Answer
+- Do NOT search again if you already have results
+
+COMPLEX TASKS (multiple tools):
+- Delete task: "풋살 일정 삭제해줘" → Thought: Need to find the football event first → Action: parse_with_criteria → Action Input: title filter → Observation: [found event with ID] → Thought: Found the event, now delete it → Action: delete_event_in_user → Action Input: event_id → Observation: [deletion result] → Thought: Task completed → Final Answer: 풋살 일정이 삭제되었습니다.
+- Modify task: "회의 시간을 3시로 바꿔줘" → Thought: Need to find the meeting first → Action: parse_with_criteria → Action Input: title filter → Observation: [found event with ID] → Thought: Found the event, now update the time → Action: update_event_in_user → Action Input: event_id and update data → Observation: [update result] → Thought: Task completed → Final Answer: 회의 시간이 3시로 변경되었습니다.
 
 Begin!
 
@@ -84,8 +122,8 @@ Thought: {agent_scratchpad}""",
             memory=self.memory,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=10,
-            max_execution_time=30
+            max_iterations=15,
+            max_execution_time=60
         )
         
         # Database 폴더의 모든 파일에 대해 embedding 필드 생성
@@ -115,7 +153,7 @@ Thought: {agent_scratchpad}""",
         
         tools.append(Tool(
             name="parse_with_criteria",
-            description="날짜, 요일, 시간, 타임윈도우 등 기준으로 이벤트를 필터링합니다. criteria는 JSON 문자열로 전달하세요.",
+            description="기존 일정을 검색합니다. 특정 날짜, 요일, 시간, 연도, 월에 있는 일정을 찾아줍니다. criteria는 JSON 문자열로 전달하세요. 지원하는 필터: date(YYYY-MM-DD), weekday(0-6 또는 '월'~'일'), hour(HH 또는 HH:MM), year(2025), month(1-12 또는 '1월', 'January' 등).",
             func=parse_with_criteria_wrapper
         ))
         
@@ -139,7 +177,7 @@ Thought: {agent_scratchpad}""",
         
         tools.append(Tool(
             name="parse_with_content",
-            description="텍스트 내용으로 이벤트를 검색합니다. query는 필수, criteria는 JSON 문자열로 전달하세요.",
+            description="텍스트 내용으로 이벤트를 검색합니다. query는 필수, criteria는 JSON 문자열로 전달하세요. 지원하는 필터: date(YYYY-MM-DD), weekday(0-6 또는 '월'~'일'), hour(HH 또는 HH:MM), year(2025), month(1-12 또는 '1월', 'January' 등).",
             func=parse_with_content_wrapper
         ))
         

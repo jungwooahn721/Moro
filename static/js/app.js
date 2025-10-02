@@ -436,7 +436,8 @@ function addMessage(content, type, isLoading = false) {
         if (content.includes('계획이 생성되었습니다') || content.includes('단계')) {
             contentEl.innerHTML = formatPlanMessage(content);
         } else {
-            contentEl.textContent = content;
+            // 긴 텍스트를 더 잘 표시하기 위해 innerHTML 사용
+            contentEl.innerHTML = content.replace(/\n/g, '<br>');
         }
     }
     

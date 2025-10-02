@@ -33,12 +33,15 @@ def _matches_date(d: datetime, date_str: str) -> bool:
 
 def _matches_weekday(d: datetime, weekday: Any) -> bool:
     # weekday: 0(Mon)~6(Sun) or str name in ko/en
+    # date_start에서 자동으로 요일을 계산해서 매칭
     if isinstance(weekday, int):
         return d.weekday() == weekday
     if isinstance(weekday, str):
+        # 요일 이름으로 매칭 (date_start에서 자동 계산된 요일과 비교)
         ko = ["월", "화", "수", "목", "금", "토", "일"]
         en = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         w = weekday.strip().lower()
+        
         if w in en:
             return d.weekday() == en.index(w)
         if len(w) == 1 and w in {c for c in "월화수목금토일"}:
@@ -64,6 +67,47 @@ def _matches_hour(d: datetime, hour: Any) -> bool:
     return False
 
 
+def _matches_year(d: datetime, year: Any) -> bool:
+    # year: int (e.g., 2025) or str (e.g., "2025")
+    if isinstance(year, int):
+        return d.year == year
+    if isinstance(year, str):
+        try:
+            return d.year == int(year.strip())
+        except Exception:
+            return False
+    return False
+
+
+def _matches_month(d: datetime, month: Any) -> bool:
+    # month: int (1-12) or str (e.g., "1", "01", "January", "1월")
+    if isinstance(month, int):
+        return d.month == month
+    if isinstance(month, str):
+        m = month.strip()
+        try:
+            # Try parsing as integer
+            return d.month == int(m)
+        except Exception:
+            # Try parsing as month name
+            month_names = {
+                "january": 1, "jan": 1, "1월": 1,
+                "february": 2, "feb": 2, "2월": 2,
+                "march": 3, "mar": 3, "3월": 3,
+                "april": 4, "apr": 4, "4월": 4,
+                "may": 5, "5월": 5,
+                "june": 6, "jun": 6, "6월": 6,
+                "july": 7, "jul": 7, "7월": 7,
+                "august": 8, "aug": 8, "8월": 8,
+                "september": 9, "sep": 9, "9월": 9,
+                "october": 10, "oct": 10, "10월": 10,
+                "november": 11, "nov": 11, "11월": 11,
+                "december": 12, "dec": 12, "12월": 12
+            }
+            return d.month == month_names.get(m.lower(), 0)
+    return False
+
+
 def _nearest_key(d: datetime, now: Optional[datetime]) -> timedelta:
     if now is None:
         now = datetime.now(tz=KST)
@@ -78,6 +122,8 @@ def filter_out_by_criteria(
     date: Optional[str] = None,  # YYYY-MM-DD
     weekday: Optional[Any] = None,  # 0-6 or '월'~'일'
     hour: Optional[Any] = None,  # HH or HH:MM
+    year: Optional[Any] = None,  # 2025 or "2025"
+    month: Optional[Any] = None,  # 1-12 or "1월", "January", etc.
     time_window_hours: Optional[float] = None,  # ±N hours from reference_time
     reference_time: Optional[datetime] = None,  # reference point for time filtering
     nearest_n: Optional[int] = None,  # exclude N nearest to reference_time
@@ -89,6 +135,8 @@ def filter_out_by_criteria(
     - date: keep only events whose start date equals 'YYYY-MM-DD' (others excluded)
     - weekday: keep only events on given weekday (0=Mon..6=Sun or name). Others excluded.
     - hour: keep only events starting at given hour ('HH' or 'HH:MM'). Others excluded.
+    - year: keep only events in given year (e.g., 2025 or "2025"). Others excluded.
+    - month: keep only events in given month (1-12, "1월", "January", etc.). Others excluded.
     - time_window_hours: keep only events within N hours of 'reference_time' (both before and after). Others excluded.
     - reference_time: reference point for time-based filtering (defaults to current time if not provided)
     - nearest_n: keep only the N nearest to 'reference_time'. Others excluded.
@@ -117,6 +165,10 @@ def filter_out_by_criteria(
             ok = ok and _matches_weekday(start, weekday)
         if hour is not None:
             ok = ok and _matches_hour(start, hour)
+        if year is not None:
+            ok = ok and _matches_year(start, year)
+        if month is not None:
+            ok = ok and _matches_month(start, month)
         if time_window_hours is not None:
             # Event starts within N hours of reference_time (both before and after)
             time_diff = abs((start - ref_time).total_seconds()) / 3600  # hours

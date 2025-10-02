@@ -299,6 +299,8 @@ body {
     border-radius: 18px;
     font-size: 14px;
     line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .user-message {
