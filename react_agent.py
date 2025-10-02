@@ -75,6 +75,7 @@ RULES:
 - Do not repeat the same action multiple times
 - Explain your reasoning in each Thought step
 - For delete/modify tasks: always search first to get the correct ID, then perform the action
+- weekday: 0 is monday, 1 is tuesday, 2 is wednesday, 3 is thursday, 4 is friday, 5 is saturday, 6 is sunday
 
 Examples:
 
@@ -99,7 +100,7 @@ STOP CONDITIONS:
 
 COMPLEX TASKS (multiple tools):
 - Delete task: "풋살 일정 삭제해줘" → Thought: Need to find the football event first → Action: parse_with_criteria → Action Input: title filter → Observation: [found event with ID] → Thought: Found the event, now delete it → Action: delete_event_in_user → Action Input: event_id → Observation: [deletion result] → Thought: Task completed → Final Answer: 풋살 일정이 삭제되었습니다.
-- Modify task: "회의 시간을 3시로 바꿔줘" → Thought: Need to find the meeting first → Action: parse_with_criteria → Action Input: title filter → Observation: [found event with ID] → Thought: Found the event, now update the time → Action: update_event_in_user → Action Input: event_id and update data → Observation: [update result] → Thought: Task completed → Final Answer: 회의 시간이 3시로 변경되었습니다.
+- Modify task: "회의 시간을 3시로 바꿔줘" → Thought: Need to find the meeting first → Action: parse_with_criteria → Action Input: title filter → Observation: [found event with ID] → Thought: Found the event, now update the time → Action: update_event_in_user → Action Input: "123|{{date_start: 2025-10-02T15:00:00+09:00}}" → Observation: [update result] → Thought: Task completed → Final Answer: 회의 시간이 3시로 변경되었습니다.
 
 Begin!
 
@@ -122,7 +123,7 @@ Thought: {agent_scratchpad}""",
             memory=self.memory,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=15,
+            max_iterations=35,
             max_execution_time=60
         )
         
@@ -199,20 +200,49 @@ Thought: {agent_scratchpad}""",
         ))
         
         # update_event_in_user 도구
-        def update_event_wrapper(event_id, updates_str):
+        def update_event_wrapper(input_str):
             try:
-                updates = json.loads(updates_str)
-                result = update_event_in_user(event_id=int(event_id), event_data=updates)
+                # 입력을 파싱하여 event_id와 updates_str 분리
+                parts = input_str.split('|', 1)
+                if len(parts) != 2:
+                    return "입력 형식이 올바르지 않습니다. 'event_id|updates_json' 형식으로 입력하세요."
+                
+                event_id, updates_str = parts
+                
+                # 디버깅을 위한 로그
+                print(f"DEBUG - event_id: {event_id}")
+                print(f"DEBUG - updates_str: {updates_str}")
+                print(f"DEBUG - updates_str type: {type(updates_str)}")
+                
+                # JSON 파싱 - 이스케이프된 따옴표 처리
+                # {\"start\": ...} 형태를 {"start": ...} 형태로 변환
+                clean_json = updates_str.replace('\\"', '"')
+                print(f"DEBUG - clean_json: {clean_json}")
+                
+                updates = json.loads(clean_json)
+                print(f"DEBUG - parsed updates: {updates}")
+                
+                # 필드명 매핑 (start -> date_start, end -> date_finish)
+                if 'start' in updates:
+                    updates['date_start'] = updates.pop('start')
+                if 'end' in updates:
+                    updates['date_finish'] = updates.pop('end')
+                
+                print(f"DEBUG - mapped updates: {updates}")
+                
+                result = update_event_in_user(event_id=int(event_id), updates=updates)
                 if result:
                     return f"일정(ID: {event_id})이 성공적으로 수정되었습니다. [CALENDAR_REFRESH]"
                 else:
                     return f"일정(ID: {event_id})을 찾을 수 없어 수정에 실패했습니다."
+            except json.JSONDecodeError as e:
+                return f"JSON 파싱 오류: {str(e)}. 입력: {updates_str}"
             except Exception as e:
                 return f"수정 중 오류가 발생했습니다: {str(e)}"
         
         tools.append(Tool(
             name="update_event_in_user",
-            description="ID로 이벤트를 수정합니다. updates는 JSON 문자열로 전달하세요.",
+            description="ID로 이벤트를 수정합니다. 입력 형식: 'event_id|updates_json'. 사용 가능한 필드: title, description, location, date_start, date_finish, member. 예: '123|{{title: 새 제목, date_start: 2025-10-02T15:00:00+09:00}}'",
             func=update_event_wrapper
         ))
         

@@ -42,10 +42,18 @@ def _matches_weekday(d: datetime, weekday: Any) -> bool:
         en = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         w = weekday.strip().lower()
         
+        # 영어 요일명 처리
         if w in en:
             return d.weekday() == en.index(w)
-        if len(w) == 1 and w in {c for c in "월화수목금토일"}:
+        
+        # 한국어 요일명 처리 (원본 weekday 사용)
+        if weekday in ko:
             return d.weekday() == ko.index(weekday)
+        
+        # 한 글자 한국어 요일명 처리
+        if len(weekday) == 1 and weekday in "월화수목금토일":
+            return d.weekday() == ko.index(weekday)
+            
     return False
 
 
