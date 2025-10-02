@@ -47,6 +47,15 @@ function setupEventListeners() {
     // 채팅 메모리 관리 버튼들
     document.getElementById('clearChatBtn').addEventListener('click', clearChatHistory);
     document.getElementById('syncGoogleBtn').addEventListener('click', syncGoogleCalendar);
+    
+    // 멀티미디어 입력 버튼들
+    document.getElementById('voiceRecordBtn').addEventListener('click', toggleVoiceRecording);
+    document.getElementById('imageUploadBtn').addEventListener('click', () => document.getElementById('imageFileInput').click());
+    document.getElementById('imageFileInput').addEventListener('change', handleImageUpload);
+    document.getElementById('removeMediaBtn').addEventListener('click', removeMediaPreview);
+    
+    // 클립보드 이미지 붙여넣기
+    document.getElementById('chatInput').addEventListener('paste', handleClipboardPaste);
 
     // 모달 관련
     document.getElementById('closeModalBtn').addEventListener('click', closeEventModal);
@@ -371,21 +380,80 @@ function toggleChat() {
 // 메시지 전송
 async function sendMessage() {
     const message = chatInput.value.trim();
-    if (!message) return;
+    
+    if (!message && !currentMedia) return;
     
     // 사용자 메시지 표시
-    addMessage(message, 'user');
+    if (message) {
+        addMessage(message, 'user');
+    }
     chatInput.value = '';
     
     // 로딩 표시
     const loadingId = addMessage('AI가 응답을 생성하고 있습니다...', 'ai', true);
     
     try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-        });
+        let response;
+        
+        if (currentMedia && message) {
+            // 텍스트 + 멀티미디어 혼합 전송
+            const formData = new FormData();
+            formData.append('text', message);
+            
+            if (currentMedia.type === 'image') {
+                formData.append('image', currentMedia.file);
+            }
+            
+            response = await fetch('/api/process/mixed', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const mixedResult = await response.json();
+            if (mixedResult.success) {
+                // 처리된 메시지로 AI 채팅 요청
+                response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: mixedResult.formatted_message })
+                });
+            } else {
+                addMessage(`멀티미디어 처리 실패: ${mixedResult.error}`, 'ai');
+                return;
+            }
+        } else if (currentMedia) {
+            // 멀티미디어만 전송
+            if (currentMedia.type === 'image') {
+                const formData = new FormData();
+                formData.append('image', currentMedia.file);
+                formData.append('format', currentMedia.file.type.split('/')[1]);
+                
+                response = await fetch('/api/process/image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const imageResult = await response.json();
+                if (imageResult.success) {
+                    // 처리된 메시지로 AI 채팅 요청
+                    response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: imageResult.formatted_message })
+                    });
+                } else {
+                    addMessage(`이미지 처리 실패: ${imageResult.error}`, 'ai');
+                    return;
+                }
+            }
+        } else {
+            // 텍스트만 전송
+            response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+        }
         
         const result = await response.json();
         // 로딩 메시지 안전 제거 (성공 시)
@@ -405,6 +473,11 @@ async function sendMessage() {
             setTimeout(() => {
                 loadEvents();
             }, 500); // 0.5초 후 캘린더 새로고침
+        }
+        
+        // 멀티미디어 미리보기 제거
+        if (currentMedia) {
+            removeMediaPreview();
         }
     } catch (error) {
         console.error('채팅 실패:', error);
@@ -509,6 +582,169 @@ async function syncGoogleCalendar() {
         syncBtn.disabled = false;
         syncBtn.innerHTML = '<i class="fas fa-sync"></i>';
     }
+}
+
+// 멀티미디어 처리 관련 변수
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let currentMedia = null;
+
+// 음성 녹음 토글
+async function toggleVoiceRecording() {
+    if (isRecording) {
+        stopVoiceRecording();
+    } else {
+        await startVoiceRecording();
+    }
+}
+
+// 음성 녹음 시작
+async function startVoiceRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+        
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            await processAudio(audioBlob);
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        
+        // UI 업데이트
+        document.getElementById('voiceRecording').style.display = 'block';
+        document.getElementById('voiceRecordBtn').innerHTML = '<i class="fas fa-stop"></i>';
+        document.getElementById('voiceRecordBtn').style.background = '#dc3545';
+        
+    } catch (error) {
+        console.error('음성 녹음 시작 실패:', error);
+        addMessage('음성 녹음 권한이 필요합니다.', 'ai');
+    }
+}
+
+// 음성 녹음 중지
+function stopVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        
+        // UI 복원
+        document.getElementById('voiceRecording').style.display = 'none';
+        document.getElementById('voiceRecordBtn').innerHTML = '<i class="fas fa-microphone"></i>';
+        document.getElementById('voiceRecordBtn').style.background = '#6c757d';
+    }
+}
+
+// 음성 데이터 처리
+async function processAudio(audioBlob) {
+    try {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.webm');
+        formData.append('format', 'webm');
+        
+        const response = await fetch('/api/process/audio', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // 음성 전사 결과를 채팅 입력창에 표시
+            document.getElementById('chatInput').value = result.transcript;
+            // 자동으로 메시지 전송
+            sendMessage();
+        } else {
+            addMessage(`음성 처리 실패: ${result.error}`, 'ai');
+        }
+        
+    } catch (error) {
+        console.error('음성 처리 실패:', error);
+        addMessage('음성 처리 중 오류가 발생했습니다.', 'ai');
+    }
+}
+
+// 이미지 업로드 처리
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        processImage(file);
+    }
+}
+
+// 이미지 데이터 처리
+async function processImage(imageFile) {
+    try {
+        // 이미지 미리보기 표시
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('previewImage').src = e.target.result;
+            document.getElementById('mediaPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(imageFile);
+        
+        // 서버로 이미지 전송
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        formData.append('format', imageFile.type.split('/')[1]);
+        
+        const response = await fetch('/api/process/image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentMedia = {
+                type: 'image',
+                file: imageFile,
+                analysis: result.analysis,
+                formattedMessage: result.formatted_message
+            };
+            // 이미지 분석 결과를 입력창에 표시하고 자동 전송
+            document.getElementById('chatInput').value = `[이미지 분석] ${result.analysis.substring(0, 200)}...`;
+            sendMessage();
+        } else {
+            addMessage(`이미지 처리 실패: ${result.error}`, 'ai');
+        }
+        
+    } catch (error) {
+        console.error('이미지 처리 실패:', error);
+        addMessage('이미지 처리 중 오류가 발생했습니다.', 'ai');
+    }
+}
+
+// 클립보드 이미지 붙여넣기 처리
+async function handleClipboardPaste(event) {
+    const items = event.clipboardData.items;
+    
+    for (let item of items) {
+        if (item.type.startsWith('image/')) {
+            event.preventDefault();
+            
+            const file = item.getAsFile();
+            if (file) {
+                processImage(file);
+            }
+            break;
+        }
+    }
+}
+
+// 미디어 미리보기 제거
+function removeMediaPreview() {
+    document.getElementById('mediaPreview').style.display = 'none';
+    document.getElementById('imageFileInput').value = '';
+    currentMedia = null;
 }
 
 // 채팅 기록 조회

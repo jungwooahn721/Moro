@@ -11,7 +11,7 @@ from RAG.parsing_with_content import parse_with_content, embed_event
 from eventmanager import delete_event_in_user, update_event_in_user, add_event_in_user
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 class ReactAgent:
     def __init__(self):
@@ -105,7 +105,7 @@ Begin!
 
 Question: {input}
 Thought: {agent_scratchpad}""",
-            input_variables=["input", "agent_scratchpad", "tools", "tool_names"]
+                   input_variables=["input", "agent_scratchpad", "tools", "tool_names"]
         )
         
         # ReAct Agent 생성
@@ -375,9 +375,16 @@ Thought: {agent_scratchpad}""",
     def __call__(self, query: str) -> str:
         """사용자 쿼리를 처리하고 응답을 반환합니다."""
         try:
+            # 한국 시간대 현재 날짜/시간 가져오기
+            korea_tz = timezone(timedelta(hours=9))
+            current_datetime = datetime.now(korea_tz).strftime("%Y년 %m월 %d일 %H시 %M분 (한국 시간)")
+            
+            # 현재 시간 정보를 쿼리에 포함
+            enhanced_query = f"[현재 시간: {current_datetime}]\n{query}"
+            
             # Agent 실행
             result = self.agent_executor.invoke({
-                "input": query
+                "input": enhanced_query
             })
             return result["output"]
         except Exception as e:

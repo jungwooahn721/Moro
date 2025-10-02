@@ -73,10 +73,33 @@
                 </div>
             </div>
             <div class="chat-input">
-                <input type="text" id="chatInput" placeholder="메시지를 입력하세요...">
-                <button id="sendBtn" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+                <div class="input-controls">
+                    <button id="voiceRecordBtn" class="btn btn-icon" title="음성 녹음">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="imageUploadBtn" class="btn btn-icon" title="이미지 업로드">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+                    <input type="text" id="chatInput" placeholder="메시지를 입력하세요... (Ctrl+V로 이미지 붙여넣기 가능)">
+                    <button id="sendBtn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div id="mediaPreview" class="media-preview" style="display: none;">
+                    <div class="media-item">
+                        <img id="previewImage" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                        <button id="removeMediaBtn" class="btn btn-sm btn-danger" style="margin-left: 10px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="voiceRecording" class="voice-recording" style="display: none;">
+                    <div class="recording-indicator">
+                        <i class="fas fa-circle recording-pulse"></i>
+                        <span>녹음 중... (클릭하여 중지)</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

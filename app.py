@@ -124,6 +124,102 @@ def sync_google_calendar():
     except Exception as e:
         return jsonify({'error': f'구글 캘린더 동기화 중 오류가 발생했습니다: {str(e)}'}), 500
 
+@app.route('/api/process/audio', methods=['POST'])
+def process_audio():
+    """음성 데이터 처리"""
+    try:
+        from multimedia_processor import MultimediaProcessor
+        
+        if 'audio' not in request.files:
+            return jsonify({'error': '음성 파일이 제공되지 않았습니다.'}), 400
+        
+        audio_file = request.files['audio']
+        audio_format = request.form.get('format', 'webm')
+        
+        processor = MultimediaProcessor()
+        result = processor.process_audio(audio_file.read(), audio_format)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'transcript': result['transcript'],
+                'formatted_message': processor.format_for_agent(result)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'음성 처리 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/process/image', methods=['POST'])
+def process_image():
+    """이미지 데이터 처리"""
+    try:
+        from multimedia_processor import MultimediaProcessor
+        
+        if 'image' not in request.files:
+            return jsonify({'error': '이미지 파일이 제공되지 않았습니다.'}), 400
+        
+        image_file = request.files['image']
+        image_format = request.form.get('format', 'png')
+        
+        processor = MultimediaProcessor()
+        result = processor.process_image(image_file.read(), image_format)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'analysis': result['analysis'],
+                'formatted_message': processor.format_for_agent(result)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'이미지 처리 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/process/mixed', methods=['POST'])
+def process_mixed_content():
+    """혼합 콘텐츠 처리 (텍스트 + 멀티미디어)"""
+    try:
+        from multimedia_processor import MultimediaProcessor
+        
+        data = request.form
+        text = data.get('text', '')
+        
+        audio_data = None
+        image_data = None
+        
+        if 'audio' in request.files:
+            audio_data = request.files['audio'].read()
+        
+        if 'image' in request.files:
+            image_data = request.files['image'].read()
+        
+        processor = MultimediaProcessor()
+        result = processor.process_mixed_content(text, audio_data, image_data)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'formatted_message': result['final_message'],
+                'processed_content': result['processed_content']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'혼합 콘텐츠 처리 중 오류가 발생했습니다: {str(e)}'}), 500
+
 @app.route('/api/events/week/<int:year>/<int:week>')
 def get_week_events(year, week):
     """특정 주의 이벤트 조회"""
