@@ -1,6 +1,8 @@
 langchain-community==0.2.12
 langchain-openai==0.1.22
 python-dotenv==1.0.1
+flask==3.0.0
+flask-cors==4.0.0
 
 # Optional: if you plan to run tests/examples
 # chromadb is a transitive dependency, but pin if needed

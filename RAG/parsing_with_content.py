@@ -85,8 +85,6 @@ def parse_with_content(query: str, criteria=None, k: int = 10, vector_dir="Datab
 
     if not query:
         return []
-    
-    
     # Filter events by criteria (use parse_with_criteria which returns matching events)
     matched_events = parse_with_criteria(vector_dir, criteria=criteria or {})
     matched_ids = set(event['id'] for event in matched_events)

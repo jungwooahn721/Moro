@@ -163,5 +163,59 @@
             "required": ["event_data"]
         }
     }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "create_plan",
+        "description": "복잡한 작업을 여러 단계로 나누어 계획을 세웁니다. 여러 함수를 조합하여 사용해야 할 때 사용합니다.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "goal": {
+                    "type": "string",
+                    "description": "달성하고자 하는 목표",
+                    "example": "내일 오후 회의 일정을 찾고, 비슷한 시간대에 다른 일정이 있는지 확인한 후 충돌을 해결"
+                },
+                "steps": {
+                    "type": "array",
+                    "description": "목표 달성을 위한 단계별 계획",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "step_number": {"type": "integer", "description": "단계 번호"},
+                            "action": {"type": "string", "description": "수행할 작업"},
+                            "function_name": {"type": "string", "description": "사용할 함수명"},
+                            "parameters": {"type": "object", "description": "함수에 전달할 매개변수"},
+                            "expected_result": {"type": "string", "description": "예상 결과"}
+                        },
+                        "required": ["step_number", "action", "function_name", "parameters", "expected_result"]
+                    }
+                }
+            },
+            "required": ["goal", "steps"]
+        }
+    }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "execute_plan",
+        "description": "계획된 단계를 순차적으로 실행합니다.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "plan_id": {
+                    "type": "string",
+                    "description": "실행할 계획의 ID"
+                },
+                "current_step": {
+                    "type": "integer",
+                    "description": "현재 실행할 단계 번호"
+                }
+            },
+            "required": ["plan_id", "current_step"]
+        }
+    }
 }
 ]

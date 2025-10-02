@@ -6,6 +6,7 @@ class RAG:
     def __init__(self, events):
         self.events = events
         self.embeddings = embed_events(events)
+        
 
     def _embed_events(self, events):
         return embed_events(events, vector_dir="Database/[user]")

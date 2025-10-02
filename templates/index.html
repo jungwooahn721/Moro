@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caly</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1><i class="fas fa-calendar-alt"></i> Moro Calendar</h1>
+            <div class="header-controls">
+                <button id="addEventBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 일정 추가
+                </button>
+                <button id="toggleChatBtn" class="btn btn-secondary">
+                    <i class="fas fa-robot"></i> AI 채팅
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- 캘린더 섹션 -->
+            <section class="calendar-section">
+                <div class="calendar-header">
+                    <button id="prevMonth" class="btn btn-icon">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="currentMonth"></h2>
+                    <button id="nextMonth" class="btn btn-icon">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- 캘린더가 여기에 동적으로 생성됩니다 -->
+                </div>
+            </section>
+
+            <!-- 일정 목록 섹션 -->
+            <section class="events-section">
+                <h3>오늘의 일정</h3>
+                <div class="events-list" id="eventsList">
+                    <!-- 일정이 여기에 표시됩니다 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- AI 채팅 패널 -->
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <h3><i class="fas fa-robot"></i> AI 어시스턴트</h3>
+                <div class="chat-controls">
+                    <button id="clearChatBtn" class="btn btn-sm btn-secondary" title="채팅 기록 초기화">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button id="closeChatBtn" class="btn btn-icon">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="message-content">
+                        안녕하세요! 일정 관리에 도움이 필요하시면 언제든 말씀해 주세요.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="메시지를 입력하세요...">
+                <button id="sendBtn" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일정 추가/수정 모달 -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">일정 추가</h3>
+                <button id="closeModalBtn" class="btn btn-icon">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="eventForm">
+                <input type="hidden" id="eventId">
+                <div class="form-group">
+                    <label for="eventTitle">제목</label>
+                    <input type="text" id="eventTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDescription">설명</label>
+                    <textarea id="eventDescription" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventStartDate">시작 날짜</label>
+                        <input type="date" id="eventStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventStartTime">시작 시간</label>
+                        <input type="time" id="eventStartTime" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventEndDate">종료 날짜</label>
+                        <input type="date" id="eventEndDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventEndTime">종료 시간</label>
+                        <input type="time" id="eventEndTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="eventLocation">장소</label>
+                    <input type="text" id="eventLocation">
+                </div>
+                <div class="form-group">
+                    <label for="eventMembers">참석자 (쉼표로 구분)</label>
+                    <input type="text" id="eventMembers" placeholder="예: 정우, 팀원1, 팀원2">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelBtn" class="btn btn-secondary">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+
