@@ -13,3 +13,12 @@
 
 __pycache__/
 *.pyc
+
+# 구글 캘린더 API 관련 파일들
+credentials.json
+token.pickle
+
+# 환경 변수 파일
+.env
+.env.local
+.env.example

@@ -284,6 +284,21 @@ body {
     background: #5a6268;
 }
 
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-success:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
 .chat-messages {
     flex: 1;
     padding: 20px;

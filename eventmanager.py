@@ -291,3 +291,76 @@ def add_event_in_user(event_data: Dict[str, Any], recompute_embedding: bool = Tr
     return new_id
 
 
+def sync_with_google_calendar(user_dir: str = "Database/[user]", sync_direction: str = "both") -> Dict[str, Any]:
+    """
+    구글 캘린더와 양방향 동기화
+    
+    Args:
+        user_dir: 사용자 데이터베이스 디렉토리
+        sync_direction: "to_google", "from_google", "both"
+    
+    Returns:
+        Dict: 동기화 결과
+    """
+    try:
+        from google_calendar_sync import GoogleCalendarSync
+        
+        # 구글 캘린더 동기화 객체 생성
+        sync = GoogleCalendarSync()
+        sync.authenticate()
+        
+        # 로컬 이벤트 로드
+        local_events = []
+        base = Path(user_dir)
+        if base.exists():
+            for json_file in base.glob("*.json"):
+                try:
+                    with open(json_file, 'r', encoding='utf-8') as f:
+                        file_events = json.load(f)
+                        if isinstance(file_events, list):
+                            local_events.extend(file_events)
+                        elif isinstance(file_events, dict):
+                            local_events.append(file_events)
+                except Exception as e:
+                    print(f"파일 로드 실패 {json_file}: {e}")
+                    continue
+        
+        results = {"success": True, "details": {}}
+        
+        if sync_direction in ["to_google", "both"]:
+            # 로컬 → 구글 동기화
+            to_google_result = sync.sync_to_google(local_events)
+            results["details"]["to_google"] = to_google_result
+        
+        if sync_direction in ["from_google", "both"]:
+            # 구글 → 로컬 동기화
+            from_google_result = sync.sync_from_google(local_events)
+            results["details"]["from_google"] = from_google_result
+            
+            # 업데이트된 로컬 이벤트 저장
+            if from_google_result["created"] > 0 or from_google_result["updated"] > 0:
+                _save_local_events(local_events, user_dir)
+        
+        return results
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _save_local_events(events: List[Dict[str, Any]], user_dir: str = "Database/[user]"):
+    """로컬 이벤트를 JSON 파일로 저장"""
+    base = Path(user_dir)
+    base.mkdir(parents=True, exist_ok=True)
+    
+    # 기존 파일들 삭제
+    for json_file in base.glob("*.json"):
+        json_file.unlink()
+    
+    # 이벤트를 개별 파일로 저장
+    for event in events:
+        if event.get('id'):
+            file_path = base / f"{event['id']:04d}.json"
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(event, f, ensure_ascii=False, indent=2)
+
+

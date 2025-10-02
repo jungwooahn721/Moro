@@ -242,6 +242,32 @@ Thought: {agent_scratchpad}""",
             func=add_event_wrapper
         ))
         
+        # 구글 캘린더 동기화 도구
+        def sync_google_calendar_wrapper(direction="both"):
+            try:
+                from eventmanager import sync_with_google_calendar
+                result = sync_with_google_calendar(sync_direction=direction)
+                if result['success']:
+                    details = result.get('details', {})
+                    message = "구글 캘린더 동기화가 완료되었습니다."
+                    if 'to_google' in details:
+                        to_google = details['to_google']
+                        message += f" 로컬→구글: 생성 {to_google.get('created', 0)}개, 수정 {to_google.get('updated', 0)}개"
+                    if 'from_google' in details:
+                        from_google = details['from_google']
+                        message += f" 구글→로컬: 생성 {from_google.get('created', 0)}개, 수정 {from_google.get('updated', 0)}개"
+                    return message + " [CALENDAR_REFRESH]"
+                else:
+                    return f"구글 캘린더 동기화 실패: {result.get('error', 'Unknown error')}"
+            except Exception as e:
+                return f"구글 캘린더 동기화 중 오류가 발생했습니다: {str(e)}"
+        
+        tools.append(Tool(
+            name="sync_google_calendar",
+            description="구글 캘린더와 양방향 동기화를 수행합니다. direction은 'to_google', 'from_google', 'both' 중 하나입니다.",
+            func=sync_google_calendar_wrapper
+        ))
+        
         return tools
 
     def _format_events(self, events):

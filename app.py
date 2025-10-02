@@ -98,6 +98,32 @@ def get_chat_history():
     except Exception as e:
         return jsonify({'error': f'채팅 기록 조회 중 오류가 발생했습니다: {str(e)}'}), 500
 
+@app.route('/api/sync/google', methods=['POST'])
+def sync_google_calendar():
+    """구글 캘린더 동기화"""
+    try:
+        from eventmanager import sync_with_google_calendar
+        
+        data = request.json or {}
+        sync_direction = data.get('direction', 'both')  # 'to_google', 'from_google', 'both'
+        
+        result = sync_with_google_calendar(sync_direction=sync_direction)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': '구글 캘린더 동기화가 완료되었습니다.',
+                'details': result['details']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'구글 캘린더 동기화 중 오류가 발생했습니다: {str(e)}'}), 500
+
 @app.route('/api/events/week/<int:year>/<int:week>')
 def get_week_events(year, week):
     """특정 주의 이벤트 조회"""

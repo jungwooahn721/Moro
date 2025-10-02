@@ -46,6 +46,7 @@ function setupEventListeners() {
     
     // 채팅 메모리 관리 버튼들
     document.getElementById('clearChatBtn').addEventListener('click', clearChatHistory);
+    document.getElementById('syncGoogleBtn').addEventListener('click', syncGoogleCalendar);
 
     // 모달 관련
     document.getElementById('closeModalBtn').addEventListener('click', closeEventModal);
@@ -470,6 +471,43 @@ async function clearChatHistory() {
     } catch (error) {
         console.error('채팅 기록 초기화 실패:', error);
         addMessage('채팅 기록 초기화 중 오류가 발생했습니다.', 'ai');
+    }
+}
+
+// 구글 캘린더 동기화
+async function syncGoogleCalendar() {
+    try {
+        const syncBtn = document.getElementById('syncGoogleBtn');
+        const originalText = syncBtn.innerHTML;
+        
+        // 버튼 비활성화 및 로딩 표시
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const response = await fetch('/api/sync/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction: 'both' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            addMessage(result.message, 'ai');
+            // 캘린더 새로고침
+            loadEvents();
+        } else {
+            addMessage(`동기화 실패: ${result.error}`, 'ai');
+        }
+        
+    } catch (error) {
+        console.error('구글 캘린더 동기화 실패:', error);
+        addMessage('구글 캘린더 동기화 중 오류가 발생했습니다.', 'ai');
+    } finally {
+        // 버튼 복원
+        const syncBtn = document.getElementById('syncGoogleBtn');
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<i class="fas fa-sync"></i>';
     }
 }
 
